@@ -36,7 +36,7 @@ def signup():
         # db.session.delete(existing_user)
         # db.session.commit()
         return jsonify({"msg": "user already exists"}), 409
-      new_user = User(username=username, password=password, fname=fname, lname=lname, city=city, phone=phone, email=email);
+      new_user = User(username=username, password=password, fname=fname, lname=lname, city=city, phone=phone, email=email, balance=0, package=0, availableLoan=0);
       db.session.add(new_user)
       db.session.commit()
       return jsonify({"msg": "user created","data": new_user.dict(), "access_token": create_access_token(identity=username)}), 201  
@@ -64,6 +64,8 @@ def login():
 def trips():
   try:
     trips = Trip.query.all()
+    if not trips:
+      return jsonify({"msg": "no trip found!"}), 404
     return jsonify({"msg": "success","data": [trip.dict() for trip in trips]}), 200
   except:
     return jsonify({"msg": "no trip found!"}), 403
@@ -84,6 +86,8 @@ def tripsFrom():
         trips_list = [trip.dict() for trip in trips]
         print(date)
         print(trips_list)
+        if not trips_list:
+            return jsonify({"msg": "No trips found!"}), 404
         return jsonify({"msg": "success","data": trips_list}), 200
     except ValueError as e:
         return jsonify({"error": "Invalid date format"}), 400
@@ -98,6 +102,8 @@ def tripConfirm():
     tripId = request.json.get("tripId")
     seatTaken = request.json.get("seatTaken")  # ['D2', 'A2']
     seatTakenLength = request.json.get("seatTakenLength")
+    loanSeatAmount = request.json.get("loanSeatAmount", 0)
+    loanAmount = request.json.get("loanAmount", 0)
     
     print(seatTaken + " " + seatTakenLength + " " + tripId + " user:" + userId )
 
@@ -117,15 +123,59 @@ def tripConfirm():
             print("User not found!")
             return jsonify({"msg": "User not found!"}), 404
 
+        if (user.availableLoan > 0) & (int(loanSeatAmount) > 0):
+            user.balance = user.balance - float(loanAmount)
+            user.availableLoan = user.availableLoan - int(loanSeatAmount)
+        # else: 
+        #     user.availableLoan = 0
         user_trip = BookedTrip(user_id=userId, trip_id=tripId, seatTaken=str(seatTaken), trip=trip, user=user)
         db.session.add(user_trip)
         db.session.add(trip)
+        db.session.add(user)
         db.session.commit()
-        return jsonify({"msg": "success", "data": trip.dict()}), 201
+        return jsonify({"msg": "success", "data": user.dict()}), 201
     except Exception as e:
         print(str(e))
         return jsonify({"msg": "failed!"}), 403
 
+@app.route("/jetSetter", methods=["POST"])
+def jetSetter():
+  userId = request.json.get("userId")
+  packageId = request.json.get("packageId")
+  
+  try:
+      user = User.query.filter_by(id=int(userId)).first()
+      if user is None:
+        return jsonify({"msg": "User not found!"}), 404
+      user.package = int(packageId)
+      if int(packageId) == 1:
+        user.availableLoan = 1
+      elif int(packageId) == 2:
+        user.availableLoan = 3
+      db.session.add(user)
+      db.session.commit()
+      return jsonify({"msg": "success", "data": user.dict()}), 200
+  except Exception as e:
+      print(str(e))
+
+
+@app.route("/addMoney", methods=["POST"])
+def addMoney():
+  userId = request.json.get("userId")
+  amount = request.json.get("amount")
+  
+  try:
+    user = User.query.filter_by(id=int(userId)).first()
+    if user is None:
+      return jsonify({"msg": "User not found!"}), 404
+    if float(amount) > 0:
+      user.balance = float(user.balance) + float(amount)
+      db.session.add(user)
+      db.session.commit()
+      return jsonify({"msg": "success", "data": user.dict()}), 200    
+  except Exception as e:
+    print(str(e))
+    return jsonify({"msg": "failed!"}), 403
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()

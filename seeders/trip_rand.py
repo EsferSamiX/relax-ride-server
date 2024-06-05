@@ -6,9 +6,9 @@ from datetime import datetime
 def seed_trips_rand():
     locations = ["Dhaka", "Chittagong", "Cox's Bazar", "Noakhali", "Khulna"]
     dates = [
-        datetime(2024, 6, 1),
-        datetime(2024, 6, 2),
-        datetime(2024, 6, 3),
+        datetime(2024, 6, 7),
+        datetime(2024, 6, 8),
+        datetime(2024, 6, 9),
     ]
     titles = ["Star Line", "Green Line", "Shyamoli", "Hanif", "Ena"]
     depart_times = ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM", "10:00 PM"]

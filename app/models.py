@@ -29,6 +29,9 @@ class User(db.Model):
     lname = db.Column(db.String(255), nullable=False)
     city = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(255), nullable=False)
+    balance = db.Column(db.Float)
+    package = db.Column(db.Integer) # basic - 0, premium - 1, gold - 2
+    availableLoan = db.Column(db.Integer)
     bookedTrips = db.relationship("BookedTrip", back_populates="user")
 
     def __repr__(self):
@@ -42,7 +45,10 @@ class User(db.Model):
             'fname': self.fname,
             'lname': self.lname,
             'city': self.city,
-            'phone': self.phone
+            'phone': self.phone,
+            'balance': self.balance,
+            'package': self.package,
+            'availableLoan': self.availableLoan
         }
 
 
